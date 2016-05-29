@@ -8,6 +8,10 @@
 
 local spawn_spawnpos = minetest.setting_get_pos("static_spawnpoint")
 local banish_pos = {x=5000, y=2, z=5000}
+banish = {}
+banish.spawn = {}
+local modpath = minetest.get_modpath("banish")
+
 minetest.register_chatcommand("spawn", {
 	params = "",
 	privs = {teleport=true},
@@ -26,14 +30,18 @@ minetest.register_chatcommand("spawn", {
 	end,
 })
 
-function revert (player)
+local function revert (player)
       local privs = minetest.get_player_privs(player);
       privs.teleport = true;
       minetest.set_player_privs(player, privs)
       minetest.chat_send_player(player, "You recovered your teleport privilege. Use /spawn to return to the spawn point")
-      minetest.register_on_respawnplayer(function(player)
-	    player:setpos(spawn_spawnpos)
-      end)
+      if banish.spawn[player] then
+	 beds.spawn[player] = banish.spawn[player]
+      end
+      beds.save_spawns()      
+--      minetest.register_on_respawnplayer(function(player)
+--	    player:setpos(spawn_spawnpos)
+--      end)
 end
 
 minetest.register_chatcommand("banish", {
@@ -46,14 +54,28 @@ minetest.register_chatcommand("banish", {
          return false, "Player not found"
       end
       player:setpos(banish_pos)
+      if beds.spawn[param] then
+	 banish.spawn[param] = beds.spawn[param]
+      else
+	 banish.spawn[param] = spawn_spawnpos
+      end
+      banish.save_spawns()
+      beds.spawn[param] = banish_pos
+      beds.save_spawns()
       local privs = minetest.get_player_privs(param)
       privs.teleport = false;
       minetest.set_player_privs(param, {interact=true, shout=true})
-      minetest.register_on_respawnplayer(function(player)
-	    player:setpos(banish_pos)
-      end)
+--      minetest.register_on_respawnplayer(function(player)
+--	    player:setpos(banish_pos)
+--      end)
       minetest.chat_send_player(name, "Banished player " .. param)
       minetest.chat_send_player(param, "You were banished! You can try to walk back. You will be able to return to spawn in 5 minutes using the /spawn command.")
       minetest.after(300, revert, param)
    end,
 })
+
+minetest.register_on_joinplayer(function(player)
+	banish.read_spawns()
+end)
+
+dofile(modpath .. "/spawns.lua")
