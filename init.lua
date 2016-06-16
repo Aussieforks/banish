@@ -30,7 +30,32 @@ minetest.register_chatcommand("spawn", {
 	end,
 })
 
-local function revert (player)
+function banish.banish(param, time)
+      local player = minetest.get_player_by_name(param)
+      if player == nil then
+         return false
+      end
+      player:setpos(banish_pos)
+      if beds.spawn[param] then
+	 banish.spawn[param] = beds.spawn[param]
+      else
+	 banish.spawn[param] = spawn_spawnpos
+      end
+      banish.save_spawns()
+      beds.spawn[param] = banish_pos
+      beds.save_spawns()
+      local privs = minetest.get_player_privs(param)
+      privs.teleport = false;
+      minetest.set_player_privs(param, {interact=true, shout=true})
+--      minetest.register_on_respawnplayer(function(player)
+--	    player:setpos(banish_pos)
+--      end)
+      minetest.chat_send_player(param, "You were banished! You can try to walk back. You will be able to return to spawn in 5 minutes using the /spawn command.")
+      minetest.after(time, banish.revert, param)
+      return true
+end
+
+function banish.revert (player)
       local privs = minetest.get_player_privs(player);
       privs.teleport = true;
       minetest.set_player_privs(player, privs)
@@ -49,28 +74,11 @@ minetest.register_chatcommand("banish", {
    description = "Banishes griefers to a far away location",
    privs = {server=true},
    func = function(name, param)
-      local player = minetest.get_player_by_name(param)
-      if player == nil then
-         return false, "Player not found"
-      end
-      player:setpos(banish_pos)
-      if beds.spawn[param] then
-	 banish.spawn[param] = beds.spawn[param]
+      if banish.banish(param, 300) then
+	 minetest.chat_send_player(name, "Banished player " .. param)
       else
-	 banish.spawn[param] = spawn_spawnpos
+	 minetest.chat_send_player(name, "Player " .. param .. " not found")
       end
-      banish.save_spawns()
-      beds.spawn[param] = banish_pos
-      beds.save_spawns()
-      local privs = minetest.get_player_privs(param)
-      privs.teleport = false;
-      minetest.set_player_privs(param, {interact=true, shout=true})
---      minetest.register_on_respawnplayer(function(player)
---	    player:setpos(banish_pos)
---      end)
-      minetest.chat_send_player(name, "Banished player " .. param)
-      minetest.chat_send_player(param, "You were banished! You can try to walk back. You will be able to return to spawn in 5 minutes using the /spawn command.")
-      minetest.after(300, revert, param)
    end,
 })
 
