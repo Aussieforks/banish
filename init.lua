@@ -51,7 +51,9 @@ function banish.banish(param, time)
 --	    player:setpos(banish_pos)
 --      end)
       minetest.chat_send_player(param, "You were banished! You can try to walk back. You will be able to return to spawn in 5 minutes using the /spawn command.")
-      minetest.after(time, banish.revert, param)
+      if not time == nil then -- infinite banishment
+	 minetest.after(time, banish.revert, param)
+      end
       return true
 end
 
