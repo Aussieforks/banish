@@ -60,6 +60,7 @@ end
 function banish.revert (player)
       local privs = minetest.get_player_privs(player);
       privs.teleport = true;
+      privs.home = true;
       minetest.set_player_privs(player, privs)
       minetest.chat_send_player(player, "You recovered your teleport privilege. Use /spawn to return to the spawn point")
       if banish.spawn[player] then
@@ -74,7 +75,7 @@ end
 minetest.register_chatcommand("banish", {
    params = "<person>",
    description = "Banishes griefers to a far away location",
-   privs = {server=true},
+   privs = {kick=true},
    func = function(name, param)
       if banish.banish(param, 300) then
 	 minetest.chat_send_player(name, "Banished player " .. param)
