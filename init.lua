@@ -7,7 +7,7 @@
 --WTFPL
 
 local spawn_spawnpos = minetest.setting_get_pos("static_spawnpoint")
-local banish_pos = {x=5000, y=2, z=5000}
+local banish_pos = {x=176,y=18,z=120}
 banish = {}
 banish.spawn = {}
 local modpath = minetest.get_modpath("banish")
