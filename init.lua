@@ -1,87 +1,89 @@
---Spawn mod for Minetest
---Originally written by VanessaE (I think), rewritten by cheapie
---WTFPL
 
 --Banish command
---Copyright 2016 Gabriel Pérez-Cerezo
---WTFPL
+--Copyright 2016,2018 Gabriel Pérez-Cerezo
+--AGPLv3
 
 local spawn_spawnpos = minetest.setting_get_pos("static_spawnpoint")
-local banish_pos = {x=176,y=18,z=120}
+local banish_pos = {x=-300,y=7,z=-48}
 banish = {}
 banish.spawn = {}
 local modpath = minetest.get_modpath("banish")
 
-minetest.register_chatcommand("spawn", {
-	params = "",
-	privs = {teleport=true},
-	description = "Teleport to the spawn point",
-	func = function(name, param)
-		local player = minetest.get_player_by_name(name)
-		if not player then
-			return false, "Player not found"
-		end
-		if spawn_spawnpos then
-			player:setpos(spawn_spawnpos)
-			return true, "Teleporting to spawn..."
-		else
-			return false, "The spawn point is not set!"
-		end
-	end,
+function banish.xbanish(name, param)
+   -- banish player in param.
+   local plname, reason = param:match("(%S+)%s+(.+)")
+   if not plname or not reason then
+      minetest.chat_send_player(name, "banish: invalid syntax")
+      return 
+   end
+   local player = minetest.get_player_by_name(plname)
+   if player == nil then
+      minetest.chat_send_player(name,"Player "..plname.." not found.")
+      return false
+   end
+   local record = {
+      source = name,
+      time = os.time(),
+      expires = nil,
+      reason = reason,
+      type = "jail",
+   }
+   xban.add_record(plname, record)
+   if beds.spawn[plname] then
+      banish.spawn[plname] = beds.spawn[plname]
+   else
+      banish.spawn[plname] = spawn_spawnpos
+   end
+   banish.save_spawns()
+   beds.spawn[plname] = banish_pos
+   beds.save_spawns()
+   player:setpos(banish_pos)
+   local privs = minetest.get_player_privs(plname)
+   privs.teleport = false
+   privs.home = false
+   minetest.set_player_privs(plname, {interact=true, shout=true})
+   minetest.chat_send_player(name, "Player "..plname.." has been jailed")
+end
+
+function banish.xunbanish(name, param)
+   local plname, reason = param:match("(%S+)%s+(.+)")
+   if not plname or not reason then
+      minetest.chat_send_player(name, "banish: invalid syntax")
+      return 
+   end
+   if not banish.spawn[plname] then
+      minetest.chat_send_player(name,"Player "..plname.." was never jailed")
+      return
+   end
+   local record = {
+      source = name,
+      time = os.time(),
+      expires = nil,
+      reason = reason,
+      type = "unjail",
+   }
+   xban.add_record(plname, record)
+   beds.spawn[plname] = banish.spawn[plname]
+   beds.save_spawns()
+   minetest.set_player_privs(param, {interact=true, shout=true, home=true})
+   minetest.chat_send_player(name, "Player "..plname.." has been unjailed")
+end
+
+minetest.register_chatcommand("jail", {
+   description = "Jails Players",
+   privs = {kick=true},
+   params = "<player> <reason>",
+   func = function(name, param)
+      banish.xbanish(name, param) 
+   end,
 })
 
-function banish.banish(param, time)
-      local player = minetest.get_player_by_name(param)
-      if player == nil then
-         return false
-      end
-      player:setpos(banish_pos)
-      if beds.spawn[param] then
-	 banish.spawn[param] = beds.spawn[param]
-      else
-	 banish.spawn[param] = spawn_spawnpos
-      end
-      banish.save_spawns()
-      beds.spawn[param] = banish_pos
-      beds.save_spawns()
-      local privs = minetest.get_player_privs(param)
-      privs.teleport = false;
-      minetest.set_player_privs(param, {interact=true, shout=true})
---      minetest.register_on_respawnplayer(function(player)
---	    player:setpos(banish_pos)
---      end)
-      minetest.chat_send_player(param, "You were banished! You can try to walk back. You will be able to return to spawn in 5 minutes using the /spawn command.")
-      if not time == nil then -- infinite banishment
-	 minetest.after(time, banish.revert, param)
-      end
-      return true
-end
-
-function banish.revert (player)
-      local privs = minetest.get_player_privs(player);
-      privs.teleport = true;
-      privs.home = true;
-      minetest.set_player_privs(player, privs)
-      minetest.chat_send_player(player, "You recovered your teleport privilege. Use /spawn to return to the spawn point")
-      if banish.spawn[player] then
-	 beds.spawn[player] = banish.spawn[player]
-      end
-      beds.save_spawns()      
---      minetest.register_on_respawnplayer(function(player)
---	    player:setpos(spawn_spawnpos)
---      end)
-end
-
-minetest.register_chatcommand("banish", {
-   params = "<person>",
-   description = "Banishes griefers to a far away location",
+minetest.register_chatcommand("unjail", {
+   description = "Unjails players",
    privs = {kick=true},
+   params = "<player> <reason>",
    func = function(name, param)
-      if banish.banish(param, 300) then
-	 minetest.chat_send_player(name, "Banished player " .. param)
-      else
-	 minetest.chat_send_player(name, "Player " .. param .. " not found")
-      end
+      banish.xunbanish(name, param) 
    end,
 })
 
