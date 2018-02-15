@@ -65,7 +65,7 @@ function banish.xunbanish(name, param)
    xban.add_record(plname, record)
    beds.spawn[plname] = banish.spawn[plname]
    beds.save_spawns()
-   minetest.set_player_privs(param, {interact=true, shout=true, home=true})
+   minetest.set_player_privs(plname, {interact=true, shout=true, home=true})
    minetest.chat_send_player(name, "Player "..plname.." has been unjailed")
 end
 
