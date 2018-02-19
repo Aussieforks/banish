@@ -29,6 +29,7 @@ function banish.xbanish(name, param)
       type = "jail",
    }
    xban.add_record(plname, record)
+   xban.add_property(plname, "jailed", true)
    if beds.spawn[plname] then
       banish.spawn[plname] = beds.spawn[plname]
    else
@@ -63,6 +64,7 @@ function banish.xunbanish(name, param)
       type = "unjail",
    }
    xban.add_record(plname, record)
+   xban.add_property(plname, "jailed", nil)
    beds.spawn[plname] = banish.spawn[plname]
    beds.save_spawns()
    minetest.set_player_privs(plname, {interact=true, shout=true, home=true})
