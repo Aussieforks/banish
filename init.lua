@@ -4,7 +4,8 @@
 --AGPLv3
 
 local spawn_spawnpos = minetest.setting_get_pos("static_spawnpoint")
-local banish_pos = {x=-300,y=7,z=-48}
+-- {x=-300,y=7,z=-48} on LinuxForks
+local banish_pos = minetest.setting_get_pos("banish.banish_pos") or vector.new(0,0,0)
 banish = {}
 banish.spawn = {}
 local modpath = minetest.get_modpath("banish")

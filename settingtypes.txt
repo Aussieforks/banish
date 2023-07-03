@@ -1,0 +1,2 @@
+# Place where banished players are sent
+banish.banish_pos (Banishment position) v3f (0.0, 0.0, 0.0)
