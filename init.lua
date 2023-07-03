@@ -53,7 +53,7 @@ function banish.xunbanish(name, param)
       minetest.chat_send_player(name, "banish: invalid syntax")
       return 
    end
-   if not banish.spawn[plname] then
+   if not xban.get_property(plname, "jailed") then
       minetest.chat_send_player(name,"Player "..plname.." was never jailed")
       return
    end
